@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
-import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeIn, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Sparkles, BrainCircuit, Lightbulb, Target, Check, HeartHandshake } from 'lucide-react-native';
 import GlassPanel from '../../components/ui/GlassPanel';
@@ -21,7 +21,7 @@ const FloatingCard = ({ children, delay, style }: { children: React.ReactNode, d
 export default function SessionReflectionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { currentReflection, endSession, setActiveOverlay } = useSessionStore();
+  const { currentReflection, endSession, setActiveOverlay, theme } = useSessionStore();
   const [confidence, setConfidence] = useState<string | null>(null);
 
   // Lock the reflection data on mount so it doesn't disappear during the fade-out transition when endSession clears it
@@ -41,13 +41,24 @@ export default function SessionReflectionScreen() {
 
   if (!reflection) return null; // Failsafe
 
+  const overlayStyle = useAnimatedStyle(() => {
+    let bgColor = 'rgba(10, 15, 25, 0.65)'; // Default/Lavender Calm
+    switch(theme) {
+      case 'Midnight Focus': bgColor = 'rgba(3, 7, 18, 0.85)'; break;
+      case 'Rainy Evening': bgColor = 'rgba(15, 23, 42, 0.8)'; break;
+      case 'Warm Sunset': bgColor = 'rgba(45, 25, 20, 0.85)'; break;
+      case 'Forest Silence': bgColor = 'rgba(6, 40, 30, 0.85)'; break;
+    }
+    return { backgroundColor: withTiming(bgColor, { duration: 500 }) };
+  }, [theme]);
+
   return (
     <View style={styles.container}>
       
       {/* Deep cinematic blur entry */}
       <Animated.View entering={FadeIn.duration(2000)} style={StyleSheet.absoluteFill} pointerEvents="none">
         <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(10, 15, 25, 0.65)' }]} />
+        <Animated.View style={[StyleSheet.absoluteFill, overlayStyle]} />
       </Animated.View>
       
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]} showsVerticalScrollIndicator={false}>

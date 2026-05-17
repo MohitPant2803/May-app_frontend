@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, FadeInDown, Easing } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, FadeInDown, Easing } from 'react-native-reanimated';
 import ForestEngine from '../environment/ForestEngine';
 import NimoCanvas from '../animations/NimoCanvas';
 import TopBar from './TopBar';
@@ -10,6 +10,7 @@ import { useRouter, usePathname } from 'expo-router';
 import FloatingDialogue from './FloatingDialogue';
 import MemoryJournalOverlay from './MemoryJournalOverlay';
 import EnvironmentSettingsOverlay from './EnvironmentSettingsOverlay';
+import * as Haptics from 'expo-haptics';
 
 export default function HomeScreen() {
   const [isInteractable, setIsInteractable] = useState(true);
@@ -24,11 +25,14 @@ export default function HomeScreen() {
   const isReflection = pathname === '/session/reflection';
   const isIntroComplete = useSessionStore((state) => state.isIntroComplete);
   const worldScale = useSharedValue(1.0);
+  const worldOpacity = useSharedValue(0);
+  const hasRevealedRef = useRef(false);
 
   const resetTimer = () => {
     if (!useSessionStore.getState().isIntroComplete) return;
     setIsInteractable(true);
     uiOpacity.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.ease) });
+    uiTranslateY.value = withTiming(0, { duration: 800, easing: Easing.out(Easing.ease) });
 
     // Clear existing timer and start a new 10 second countdown
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -37,19 +41,18 @@ export default function HomeScreen() {
     if (useSessionStore.getState().status !== 'idle') return;
 
     timerRef.current = setTimeout(() => {
-      uiOpacity.value = withTiming(0, { duration: 1500 });
-      
-      // Disable pointer events after the fade animation completes 
-      // so hidden buttons aren't accidentally pressed
-      setTimeout(() => setIsInteractable(false), 1500);
-    }, 10000);
+      uiOpacity.value = withTiming(0, { duration: 2500, easing: Easing.inOut(Easing.ease) });
+      uiTranslateY.value = withTiming(15, { duration: 2500, easing: Easing.inOut(Easing.ease) });
+      setTimeout(() => setIsInteractable(false), 2500);
+    }, 12000);
   };
 
   useEffect(() => {
     if (!isIntroComplete) {
       uiOpacity.value = 0;
-      uiTranslateY.value = 20; // Push down slightly for cinematic upward emergence
-      worldScale.value = withTiming(1.04, { duration: 8000, easing: Easing.out(Easing.cubic) });
+      worldOpacity.value = 0;
+      uiTranslateY.value = 40; // Push down further for deeper emergence
+      worldScale.value = 1.08; // Deep zoom
       setIsInteractable(false);
       return;
     }
@@ -58,17 +61,43 @@ export default function HomeScreen() {
       // Hide TopBar completely when overlay is active or reflection modal is open
       if (timerRef.current) clearTimeout(timerRef.current);
       uiOpacity.value = withTiming(0, { duration: 400 });
-      uiTranslateY.value = withTiming(-40, { duration: 400 });
+      uiTranslateY.value = withTiming(-20, { duration: 400 });
       setIsInteractable(false);
     } else {
-      // Restore TopBar
-      uiTranslateY.value = withTiming(0, { duration: 1200, easing: Easing.out(Easing.ease) });
-      if (sessionStatus === 'idle') {
-        resetTimer();
+      if (!hasRevealedRef.current) {
+        hasRevealedRef.current = true;
+        
+        // 1. Fast fade-in from black and camera settle (all in 1 second)
+        worldOpacity.value = withTiming(1, { duration: 500, easing: Easing.inOut(Easing.ease) });
+        worldScale.value = withTiming(1.0, { duration: 1000, easing: Easing.out(Easing.cubic) });
+
+        // 2. Quick UI Emergence
+        uiTranslateY.value = withTiming(0, { duration: 1000, easing: Easing.out(Easing.cubic) });
+        uiOpacity.value = withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) });
+
+        // 3. Interaction Enable + Haptic Signal
+        setTimeout(() => {
+          setIsInteractable(true);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }, 1000);
+
+        // 4. Start auto-hide idle timer
+        timerRef.current = setTimeout(() => {
+          if (useSessionStore.getState().status !== 'idle') return;
+          uiOpacity.value = withTiming(0, { duration: 2500, easing: Easing.inOut(Easing.ease) });
+          uiTranslateY.value = withTiming(15, { duration: 2500, easing: Easing.inOut(Easing.ease) });
+          setTimeout(() => setIsInteractable(false), 2500);
+        }, 15000);
       } else {
-        if (timerRef.current) clearTimeout(timerRef.current);
-        setIsInteractable(true);
-        uiOpacity.value = withTiming(1, { duration: 400 });
+        // Standard restore
+        uiTranslateY.value = withTiming(0, { duration: 800, easing: Easing.out(Easing.ease) });
+        if (sessionStatus === 'idle') {
+          resetTimer();
+        } else {
+          if (timerRef.current) clearTimeout(timerRef.current);
+          setIsInteractable(true);
+          uiOpacity.value = withTiming(1, { duration: 400 });
+        }
       }
     }
     return () => {
@@ -77,7 +106,8 @@ export default function HomeScreen() {
   }, [sessionStatus, activeOverlay, isReflection, isIntroComplete]);
 
   const worldAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: worldScale.value }]
+    transform: [{ scale: worldScale.value }],
+    opacity: worldOpacity.value
   }));
 
   useEffect(() => {
@@ -110,10 +140,10 @@ export default function HomeScreen() {
      let targetColor = '#000000';
      switch(theme) {
         case 'Lavender Calm': targetColor = '#1A1525'; break;
-        case 'Midnight Focus': targetColor = '#050A10'; break;
-        case 'Rainy Evening': targetColor = '#101820'; break;
-        case 'Warm Sunset': targetColor = '#2A1B18'; break;
-        case 'Forest Silence': targetColor = '#0A1510'; break;
+        case 'Midnight Focus': targetColor = '#030712'; break;
+        case 'Rainy Evening': targetColor = '#0F172A'; break;
+        case 'Warm Sunset': targetColor = '#2D1510'; break;
+        case 'Forest Silence': targetColor = '#062E1A'; break;
      }
      return { backgroundColor: withTiming(targetColor, { duration: 1500 }) };
   }, [theme]);
@@ -123,10 +153,10 @@ export default function HomeScreen() {
      let targetColor = 'rgba(5, 10, 16, 0.4)';
      switch(theme) {
         case 'Lavender Calm': targetColor = 'rgba(130, 110, 160, 0.25)'; break;
-        case 'Midnight Focus': targetColor = 'rgba(5, 10, 20, 0.6)'; break;
-        case 'Rainy Evening': targetColor = 'rgba(40, 60, 80, 0.45)'; break;
-        case 'Warm Sunset': targetColor = 'rgba(255, 140, 100, 0.2)'; break;
-        case 'Forest Silence': targetColor = 'rgba(40, 80, 50, 0.3)'; break;
+        case 'Midnight Focus': targetColor = 'rgba(3, 7, 18, 0.65)'; break;
+        case 'Rainy Evening': targetColor = 'rgba(30, 41, 59, 0.55)'; break;
+        case 'Warm Sunset': targetColor = 'rgba(234, 88, 12, 0.25)'; break;
+        case 'Forest Silence': targetColor = 'rgba(6, 78, 59, 0.45)'; break;
      }
      return { backgroundColor: withTiming(targetColor, { duration: 1500 }) };
   }, [theme]);

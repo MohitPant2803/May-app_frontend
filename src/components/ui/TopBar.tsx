@@ -9,7 +9,7 @@ import RecordButton from './RecordButton';
 import { useSessionStore } from '../../core/sessionStore';
 
 // Live Session Timer Component
-const SessionTimer = ({ isPaused }: { isPaused: boolean }) => {
+const SessionTimer = ({ isPaused, isLavender }: { isPaused: boolean, isLavender: boolean }) => {
   const status = useSessionStore((state) => state.status);
   const [seconds, setSeconds] = useState(0);
 
@@ -24,7 +24,7 @@ const SessionTimer = ({ isPaused }: { isPaused: boolean }) => {
   return (
     <View style={styles.timerContainer}>
       <View style={styles.timerDot} />
-      <Text style={styles.timerText}>{mins}:{secs}</Text>
+      <Text style={[styles.timerText, { textShadowColor: isLavender ? 'transparent' : 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: isLavender ? 0 : 1 }, textShadowRadius: isLavender ? 0 : 2 }]}>{mins}:{secs}</Text>
     </View>
   );
 };
@@ -38,6 +38,11 @@ export default function TopBar() {
   const stopListening = useSessionStore((state) => state.stopListening);
   const triggerCooldown = useSessionStore((state) => state.triggerCooldown);
   const setActiveOverlay = useSessionStore((state) => state.setActiveOverlay);
+  const theme = useSessionStore((state) => state.theme);
+
+  const isLavender = theme === 'Lavender Calm';
+  const iconColor = isLavender ? '#5C6B73' : '#F8FAFC';
+  const profileTextColor = isLavender ? '#5C6B73' : '#F8FAFC';
 
   const isActiveSession = status !== 'idle';
   const [showEndConfirm, setShowEndConfirm] = useState(false);
@@ -76,11 +81,11 @@ export default function TopBar() {
           {/* LEFT: Memories / Journal */}
           {isActiveSession ? (
             <View style={styles.sideButtonContainer}>
-              <SessionTimer isPaused={showEndConfirm} />
+              <SessionTimer isPaused={showEndConfirm} isLavender={isLavender} />
             </View>
           ) : (
             <Pressable style={styles.sideButtonContainer} hitSlop={15} onPress={() => setActiveOverlay('timeline')}>
-              <BookOpen size={24} color="#5C6B73" strokeWidth={1.5} />
+              <BookOpen size={24} color={iconColor} strokeWidth={1.5} />
             </Pressable>
           )}
 
@@ -112,7 +117,7 @@ export default function TopBar() {
             </Animated.View>
           ) : (
             <Pressable style={styles.sideButtonContainer} hitSlop={15} onPress={() => setActiveOverlay('profile')}>
-              <Settings size={24} color="#5C6B73" strokeWidth={1.5} />
+              <Settings size={24} color={iconColor} strokeWidth={1.5} />
             </Pressable>
           )}
           
@@ -122,7 +127,7 @@ export default function TopBar() {
         <Pressable style={styles.profileWrapper}>
           <GlassPanel style={styles.profilePill}>
             <View style={styles.statusDot} />
-            <Text style={styles.profileText}>{profileText}</Text>
+            <Text style={[styles.profileText, { color: profileTextColor, textShadowColor: isLavender ? 'transparent' : 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: isLavender ? 0 : 1 }, textShadowRadius: isLavender ? 0 : 2 }]}>{profileText}</Text>
           </GlassPanel>
         </Pressable>
 

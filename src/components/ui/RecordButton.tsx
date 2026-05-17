@@ -20,6 +20,9 @@ export default function RecordButton() {
   const startListening = useSessionStore((state) => state.startListening);
   const stopListening = useSessionStore((state) => state.stopListening);
   const pauseListening = useSessionStore((state) => state.pauseListening);
+  const theme = useSessionStore((state) => state.theme);
+  const isLavender = theme === 'Lavender Calm';
+  const iconColor = status === 'paused' ? '#B5D8EB' : (isLavender ? '#5C6B73' : '#F8FAFC');
   
   // Ambient breathing scale
   const scale = useSharedValue(1);
@@ -105,7 +108,7 @@ export default function RecordButton() {
             {status === 'listening' ? (
               <RecordingWaveform />
             ) : (
-              <Mic size={32} color={status === 'paused' ? '#B5D8EB' : '#5C6B73'} strokeWidth={1.5} />
+              <Mic size={32} color={iconColor} strokeWidth={1.5} />
             )}
           </GlassPanel>
         </Pressable>

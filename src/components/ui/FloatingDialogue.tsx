@@ -13,7 +13,8 @@ import Animated, {
 import { useSessionStore } from '../../core/sessionStore';
 
 export default function FloatingDialogue() {
-  const { dialogueText, status } = useSessionStore();
+  const { dialogueText, status, theme } = useSessionStore();
+  const isLavender = theme === 'Lavender Calm';
   const [displayedText, setDisplayedText] = useState('');
   const [isVisible, setIsVisible] = useState(false);
 
@@ -96,7 +97,7 @@ export default function FloatingDialogue() {
           {/* Blur must be wrapped securely in the bubble for clean rounded corners */}
           <BlurView intensity={15} tint="light" style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, { backgroundColor }]} />
-          <ProgressiveText key={displayedText} text={displayedText} isVisible={isVisible} />
+          <ProgressiveText key={displayedText} text={displayedText} isVisible={isVisible} isLavender={isLavender} />
         </View>
       </Animated.View>
     </View>
@@ -104,18 +105,18 @@ export default function FloatingDialogue() {
 }
 
 // Splits text into words and orchestrates the conversational delay
-const ProgressiveText = ({ text, isVisible }: { text: string, isVisible: boolean }) => {
+const ProgressiveText = ({ text, isVisible, isLavender }: { text: string, isVisible: boolean, isLavender: boolean }) => {
   const words = text.split(' ');
   return (
     <View style={styles.textContainer}>
       {words.map((word, index) => (
-        <FadeInWord key={index} word={word} index={index} isVisible={isVisible} />
+        <FadeInWord key={index} word={word} index={index} isVisible={isVisible} isLavender={isLavender} />
       ))}
     </View>
   );
 };
 
-const FadeInWord = ({ word, index, isVisible }: { word: string, index: number, isVisible: boolean }) => {
+const FadeInWord = ({ word, index, isVisible, isLavender }: { word: string, index: number, isVisible: boolean, isLavender: boolean }) => {
   const wordOpacity = useSharedValue(0);
 
   useEffect(() => {
@@ -127,7 +128,7 @@ const FadeInWord = ({ word, index, isVisible }: { word: string, index: number, i
 
   const style = useAnimatedStyle(() => ({ opacity: wordOpacity.value }));
 
-  return <Animated.Text style={[styles.text, style]}>{word} </Animated.Text>;
+  return <Animated.Text style={[isLavender ? styles.text : styles.textEngaging, style]}>{word} </Animated.Text>;
 };
 
 const styles = StyleSheet.create({
@@ -153,4 +154,5 @@ const styles = StyleSheet.create({
   },
   textContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
   text: { color: '#F8FAFC', fontSize: 17, fontWeight: '400', letterSpacing: 0.6, lineHeight: 28, textShadowColor: 'rgba(255,255,255,0.15)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
+  textEngaging: { color: '#FFFFFF', fontSize: 17, fontWeight: '600', letterSpacing: 0.6, lineHeight: 28, textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },
 });

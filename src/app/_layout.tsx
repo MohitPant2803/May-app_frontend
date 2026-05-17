@@ -44,7 +44,6 @@ export default function RootLayout() {
       <StatusBar style="light" />
       {showIntro && <CinematicIntro onComplete={() => {
         setShowIntro(false);
-        useSessionStore.getState().completeIntro();
       }} />}
     </GestureHandlerRootView>
   );

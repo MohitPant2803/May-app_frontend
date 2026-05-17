@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TextInput } from 'react-native';
-import Animated, { FadeInUp, FadeIn, FadeOut, SlideInRight, SlideOutRight, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeIn, FadeOut, SlideInRight, SlideOutRight, LinearTransition, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { ArrowLeft, Flame, Sparkles, BrainCircuit, Edit3, CheckCircle, Target, ChevronRight, ChevronDown, Calendar, Clock } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import GlassPanel from './GlassPanel';
@@ -74,7 +74,7 @@ const SessionPreviewCard = ({ session, onPress }: { session: SessionHistory, onP
 
 export default function MemoryJournalOverlay() {
   const insets = useSafeAreaInsets();
-  const { sessionHistory, setActiveOverlay, updateSessionTopic } = useSessionStore();
+  const { sessionHistory, setActiveOverlay, updateSessionTopic, theme } = useSessionStore();
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   // Group sessions by Date
@@ -88,9 +88,20 @@ export default function MemoryJournalOverlay() {
 
   const selectedSession = sessionHistory.find(s => s.id === selectedSessionId);
 
+  const overlayStyle = useAnimatedStyle(() => {
+    let bgColor = 'rgba(15, 23, 42, 0.4)'; // Default/Lavender Calm
+    switch(theme) {
+      case 'Midnight Focus': bgColor = 'rgba(3, 7, 18, 0.7)'; break;
+      case 'Rainy Evening': bgColor = 'rgba(15, 23, 42, 0.65)'; break;
+      case 'Warm Sunset': bgColor = 'rgba(45, 25, 20, 0.7)'; break;
+      case 'Forest Silence': bgColor = 'rgba(6, 40, 30, 0.7)'; break;
+    }
+    return { backgroundColor: withTiming(bgColor, { duration: 500 }) };
+  }, [theme]);
+
   return (
     <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(300)} style={styles.container}>
-      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(15, 23, 42, 0.4)' }]} pointerEvents="none" />
+      <Animated.View style={[StyleSheet.absoluteFill, overlayStyle]} pointerEvents="none" />
       
       {/* --- LIST VIEW --- */}
       {!selectedSessionId && (

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Switch } from 'react-native';
-import Animated, { FadeInUp, FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeIn, FadeOut, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { ArrowLeft, Moon, Music, Sparkles } from 'lucide-react-native';
 import GlassPanel from './GlassPanel';
 import { useSessionStore, MoodTheme, Personality } from '../../core/sessionStore';
@@ -13,9 +13,20 @@ export default function EnvironmentSettingsOverlay() {
   const insets = useSafeAreaInsets();
   const { theme, personality, askMoreQuestions, updateSetting, setActiveOverlay } = useSessionStore();
 
+  const overlayStyle = useAnimatedStyle(() => {
+    let bgColor = 'rgba(15, 23, 42, 0.5)'; // Default/Lavender Calm
+    switch(theme) {
+      case 'Midnight Focus': bgColor = 'rgba(3, 7, 18, 0.75)'; break;
+      case 'Rainy Evening': bgColor = 'rgba(15, 23, 42, 0.7)'; break;
+      case 'Warm Sunset': bgColor = 'rgba(45, 25, 20, 0.75)'; break;
+      case 'Forest Silence': bgColor = 'rgba(6, 40, 30, 0.75)'; break;
+    }
+    return { backgroundColor: withTiming(bgColor, { duration: 500 }) };
+  }, [theme]);
+
   return (
     <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(300)} style={styles.container}>
-      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(15, 23, 42, 0.5)' }]} pointerEvents="none" />
+      <Animated.View style={[StyleSheet.absoluteFill, overlayStyle]} pointerEvents="none" />
       
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]} showsVerticalScrollIndicator={false}>
         

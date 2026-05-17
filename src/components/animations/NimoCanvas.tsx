@@ -1127,7 +1127,7 @@ function ThemeLighting({ theme }: { theme: string }) {
   );
 }
 
-export default function NimoCanvas({ emotion = 'idle', theme = 'Midnight Focus', onBackgroundTap }: NimoCanvasProps) {
+export default function NimoCanvas({ emotion = 'idle', theme = 'Lavender Calm', onBackgroundTap }: NimoCanvasProps) {
   return (
     <View style={styles.container} pointerEvents="box-none">
       <Canvas 
